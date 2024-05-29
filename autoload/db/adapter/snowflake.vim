@@ -7,7 +7,7 @@ function! s:command_for_url(url) abort
   let url = db#url#parse(a:url)
   "extra options here turn off nonsense before/after results
   let cmd = (has_key(url, 'password') ? ['env', 'SNOWSQL_PWD=' . url.password] : []) +
-        \ ['snowsql', '-o', 'friendly=false', '-o', 'timing=false'] + 
+        \ ['snowsql', '-o', 'friendly=false', '-o', 'timing=false'] +
         \ db#url#as_argv(a:url, '-a ', '', '', '-u ', '','-d ')
   for i in keys(url.params)
     let cmd += ['--'.i.'='.url.params[i]]
@@ -37,8 +37,23 @@ function! db#adapter#snowflake#complete_database(url) abort
   for i in split(out, "\n")
     let dbname = split(i, "|")
     if len(dbname) > 2
-      call add(dbs, trim(dbname[1])) 
+      call add(dbs, trim(dbname[1]))
     endif
   endfor
-  return dbs 
+  return dbs
+endfunction
+
+function! db#adapter#snowflake#tables(url) abort
+  let cmd = s:command_for_url(a:url)
+  let cmd .= ' --query "show tables"'
+  " if cmd looks to have no cli args, treat it as a string
+  let out = system(cmd)
+  let dbs = []
+  for i in split(out, "\n")
+    let dbname = split(i, "|")
+    if len(dbname) > 2
+      call add(dbs, trim(dbname[1]))
+    endif
+  endfor
+  return dbs
 endfunction
